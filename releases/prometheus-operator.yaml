@@ -1,0 +1,29 @@
+---
+apiVersion: helm.fluxcd.io/v1
+kind: HelmRelease
+metadata:
+  name: po
+  namespace: prometheus
+  annotations:
+    fluxcd.io/automated: "true"
+    # fluxcd.io/tag.cluster-autoscaler: glob:v1.15.*
+spec:
+  rollback:
+    enable: true
+  maxHistory: 5
+  chart:
+    repository: https://kubernetes-charts.storage.googleapis.com
+    name: prometheus-operator
+    version: 9.1.1
+  valuesFrom:
+  - configMapKeyRef:
+      name: prometheus-operator-default-values
+      namespace: prometheus
+      key: values.yaml
+      optional: false
+  - configMapKeyRef:
+      name: prometheus-operator-az-values
+      namespace: prometheus
+      key: values.yaml
+      optional: false
+
