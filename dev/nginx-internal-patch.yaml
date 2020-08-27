@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-internal-az-values
+  namespace: nginx-internal
+  labels:
+    app: nginx-internal
+data:
+  values.yaml: |
+    controller:
+      service:
+        annotations: 
+          service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "https"
+          service.beta.kubernetes.io/aws-load-balancer-ssl-cert: "arn:aws:acm:ca-central-1:674235264090:certificate/5152ff1c-479a-4fd0-abe4-69286a0e31e3"
+          service.beta.kubernetes.io/aws-load-balancer-extra-security-groups: "sg-8e51d0e7"

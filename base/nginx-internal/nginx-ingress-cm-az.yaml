@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-internal-az-values
+  namespace: nginx-internal
+  labels:
+    app: nginx-internal
+data:
+  values.yaml: |

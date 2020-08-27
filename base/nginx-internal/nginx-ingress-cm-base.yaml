@@ -1,0 +1,34 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-internal-default-values
+  namespace: nginx-internal
+  labels:
+    app: nginx-internal
+data:
+  values.yaml: |
+    serviceAccount:
+      name: nginx-internal
+    controller:
+      ingressClass: nginx-internal
+      image:
+        repository: us.gcr.io/k8s-artifacts-prod/ingress-nginx/controller
+        tag: "v0.34.1"
+        digest: ""
+      publishService:
+        enabled: "true"
+      service:
+        annotations: 
+          service.beta.kubernetes.io/aws-load-balancer-backend-protocol: tcp
+          service.beta.kubernetes.io/aws-load-balancer-connection-idle-timeout: "60"
+          # cross-zone settings required two steps for some reason.
+          # service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "false"
+          service.beta.kubernetes.io/aws-load-balancer-type: nlb
+          service.beta.kubernetes.io/aws-load-balancer-internal: "true"
+          service.beta.kubernetes.io/aws-load-balancer-additional-resource-tags: "c1:cost-centre=4473"
+        targetPorts:
+            https: http          
+    config:
+      use-proxy-protocol: "false"
+      use-forwarded-headers: "true"
+      proxy-real-ip-cidr: "0.0.0.0/0"

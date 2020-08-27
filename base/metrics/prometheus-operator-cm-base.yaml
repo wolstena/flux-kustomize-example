@@ -1,0 +1,103 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-operator-default-values
+  namespace: prometheus
+  labels:
+    app: prometheus-operator
+data:
+  values.yaml: |
+    defaultRules:
+      rules:
+        etcd: false
+    alertmanager:
+      config:
+        global:
+          resolve_timeout: 5m
+          slack_api_url: https://hooks.slack.com/services/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
+        route:
+          # group_by: ['job']
+          group_by: [alertname, job]
+          group_wait: 30s
+          group_interval: 5m
+          repeat_interval: 12h
+          receiver: 'slack-alert'
+          routes:
+          - match:
+              alertname: Watchdog
+            receiver: 'null'
+          - match:
+            receiver: 'slack-alert'
+            continue: true
+        receivers:
+        - name: 'null'
+        - name: 'slack-alert'
+          slack_configs:
+          - channel: '#platform-notify'
+            send_resolved: true
+            username: Alertmanager
+            # text: 'https://internal.myorg.net/wiki/alerts/{{ .GroupLabels.app }}/{{ .GroupLabels.alertname }}'
+            # title: '{{ .CommonAnnotations.summary }}'
+            # text: "<!channel> \nsummary: {{ .CommonAnnotations.summary }}\ndescription: {{ .CommonAnnotations.description }}"
+            title: |-
+              [{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}] {{ .CommonLabels.alertname }} for {{ .CommonLabels.job }}
+              {{- if gt (len .CommonLabels) (len .GroupLabels) -}}
+                {{" "}}(
+                {{- with .CommonLabels.Remove .GroupLabels.Names }}
+                  {{- range $index, $label := .SortedPairs -}}
+                    {{ if $index }}, {{ end }}
+                    {{- $label.Name }}="{{ $label.Value -}}"
+                  {{- end }}
+                {{- end -}}
+                )
+              {{- end }}
+            text: >-
+              {{ with index .Alerts 0 -}}
+                :chart_with_upwards_trend: *<{{ .GeneratorURL }}|Graph>*
+                {{- if .Annotations.runbook }}   :spiral_note_pad: *<{{ .Annotations.runbook }}|Runbook>*{{ end }}
+
+                *Runbook:* <{{ .Annotations.runbook }}|:spiral_note_pad:>
+                *Graph:* <{{ .GeneratorURL }}|:chart_with_upwards_trend:>
+              {{ end }}
+
+              *Alert details*:
+
+              {{ range .Alerts -}}
+                *Summary:* {{ .Annotations.summary }} - `{{ .Labels.severity }}`
+                *Cluster:*  {{ template "cluster" $root }}
+
+                *Alert:* {{ .Annotations.title }}{{ if .Labels.severity }} - `{{ .Labels.severity }}`{{ end }}
+                {{- if .Annotations.runbook }}  *Description:* {{ .Annotations.description }}{{ end }}
+                *Details:*
+                {{ range .Labels.SortedPairs }}   • *{{ .Name }}:* `{{ .Value }}`
+                {{ end }}
+              {{ end }}
+
+    kubeEtcd:
+      enabled: false
+
+    kubeControllerManager:
+      enabled: false
+
+    kubeScheduler:
+      enabled: false
+
+    kubeProxy:
+      enabled: false
+
+    grafana:
+      plugins: [grafana-piechart-panel]
+      adminPassword: Central123!
+
+    prometheus:
+      prometheusSpec:
+        retention: 90d
+        retentionSize: 90GB
+        storageSpec:
+        volumeClaimTemplate:
+          spec:
+            storageClassName: ssd
+            accessModes: ["ReadWriteOnce"]
+            resources:
+              requests:
+                storage: 100Gi
