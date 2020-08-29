@@ -5,6 +5,7 @@ metadata:
   namespace: prometheus
   labels:
     app: prometheus-operator
+    role: monitoring
 data:
   values.yaml: |
     alertmanager:
